@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Attachment
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,19 +33,30 @@ fun TaskListScreen(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(tasks) { taskWithAttachments ->
-                TaskItem(
-                    taskWithAttachments = taskWithAttachments,
-                    onClick = { onTaskClick(taskWithAttachments.task) },
-                    onStatusChange = { onTaskStatusChange(taskWithAttachments.task) }
-                )
+
+        Column {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "TODO LIST",
+                style = MaterialTheme.typography.headlineLarge,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 0.dp)
+            )
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(tasks) { taskWithAttachments ->
+                    TaskItem(
+                        taskWithAttachments = taskWithAttachments,
+                        onClick = { onTaskClick(taskWithAttachments.task) },
+                        onStatusChange = { onTaskStatusChange(taskWithAttachments.task) }
+                    )
+                }
             }
         }
     }
@@ -62,7 +72,7 @@ fun TaskItem(
     val task = taskWithAttachments.task
     val hasAttachments = taskWithAttachments.attachments.isNotEmpty()
     val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
-    
+
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth()
@@ -84,13 +94,13 @@ fun TaskItem(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                
+
                 // Kategoria zadania
                 CategoryChip(category = task.category)
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Opis zadania
             if (!task.description.isNullOrEmpty()) {
                 Text(
@@ -101,7 +111,7 @@ fun TaskItem(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
-            
+
             // Dolna część karty z dodatkowymi informacjami
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -109,11 +119,6 @@ fun TaskItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text(
-                        text = "Utworzono: ${dateFormat.format(Date(task.createdAt))}",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    
                     // Wyświetl czas wykonania, jeśli jest ustawiony
                     if (task.notifyAt != null) {
                         Text(
@@ -122,7 +127,7 @@ fun TaskItem(
                         )
                     }
                 }
-                
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // Ikona załączników
                     if (hasAttachments) {
@@ -133,7 +138,7 @@ fun TaskItem(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                     }
-                    
+
                     // Checkbox statusu
                     Checkbox(
                         checked = task.status == TaskStatus.DONE,
@@ -155,9 +160,9 @@ fun CategoryChip(category: Category) {
         Category.URGENT to MaterialTheme.colorScheme.error,
         Category.OTHER to MaterialTheme.colorScheme.outline
     )
-    
+
     val chipColor = categoryColors[category] ?: MaterialTheme.colorScheme.primary
-    
+
     SuggestionChip(
         onClick = { },
         label = { Text(text = category.name) },

@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import pl.juhas.todo.database.*
 import java.text.SimpleDateFormat
@@ -37,7 +37,7 @@ fun TaskDetailScreen(
     var title by remember { mutableStateOf(taskWithAttachments?.task?.title ?: "") }
     var description by remember { mutableStateOf(taskWithAttachments?.task?.description ?: "") }
     var status by remember { mutableStateOf(taskWithAttachments?.task?.status ?: TaskStatus.TODO) }
-    var notify by remember { mutableStateOf(taskWithAttachments?.task?.notify ?: false) }
+    var notify by remember { mutableStateOf(taskWithAttachments?.task?.notify == true) }
     var notifyAtDate by remember { mutableStateOf(taskWithAttachments?.task?.notifyAt?.let { Date(it) } ?: Date()) }
     var category by remember { mutableStateOf(taskWithAttachments?.task?.category ?: Category.NORMAL) }
 
@@ -111,7 +111,7 @@ fun TaskDetailScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onCancel) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Powrót")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Powrót")
                     }
                 },
                 actions = {
@@ -127,7 +127,7 @@ fun TaskDetailScreen(
                             )
                         } else {
                             Task(
-                                id = (taskWithAttachments?.task?.id ?: 0),
+                                id = 0, // Room wygeneruje nowe ID automatycznie
                                 title = title,
                                 description = description,
                                 createdAt = System.currentTimeMillis(),
@@ -191,6 +191,15 @@ fun TaskDetailScreen(
                     modifier = Modifier.padding(start = 8.dp)
                 )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Wyświetlanie daty utworzenia zadania
+            val creationDateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+            Text(
+                text = "Data utworzenia: ${creationDateFormat.format(Date(taskWithAttachments?.task?.createdAt ?: System.currentTimeMillis()))}",
+                style = MaterialTheme.typography.bodyMedium
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
