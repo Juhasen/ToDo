@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.documentfile.provider.DocumentFile
 import pl.juhas.todo.database.*
+import pl.juhas.todo.ui.composables.AttachmentItem
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -420,55 +421,6 @@ fun TaskDetailScreen(
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AttachmentItem(
-    attachment: Attachment,
-    onRemove: () -> Unit,
-    onOpen: () -> Unit
-) {
-    val context = LocalContext.current
-    val isImage = attachment.mimeType.startsWith("image/")
-
-    Card(
-        onClick = onOpen,
-        modifier = Modifier.width(120.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = if (isImage) Icons.Default.Image else Icons.Default.InsertDriveFile,
-                contentDescription = "Typ załącznika",
-                modifier = Modifier.size(40.dp)
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = attachment.fileName,
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 1
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            IconButton(
-                onClick = onRemove,
-                modifier = Modifier.size(24.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Usuń załącznik",
-                    tint = MaterialTheme.colorScheme.error
-                )
             }
         }
     }
