@@ -64,4 +64,11 @@ dependencies {
     implementation("androidx.room:room-guava:$room_version")
     testImplementation("androidx.room:room-testing:$room_version")
     implementation("androidx.room:room-paging:$room_version")
+
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+
+    implementation("androidx.documentfile:documentfile:1.1.0")
+
+    implementation("androidx.navigation:navigation-compose:2.9.0")
 }
+
