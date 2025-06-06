@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import pl.juhas.todo.database.*
+import pl.juhas.todo.ui.composables.ViewAttachmentItem
 import java.text.SimpleDateFormat
 import java.util.*
 
