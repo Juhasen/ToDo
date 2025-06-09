@@ -29,7 +29,7 @@ import java.util.*
 @Composable
 fun TaskEditScreen(
     taskWithAttachments: TaskWithAttachments?,
-    onSave: (Task) -> Unit,
+    onSave: (Task, List<Attachment>) -> Unit,   // Zmodyfikowane, aby obsłużyć również listę załączników
     onCancel: () -> Unit,
     onAddAttachment: (Attachment) -> Unit,
     onRemoveAttachment: (Attachment) -> Unit,
@@ -47,7 +47,16 @@ fun TaskEditScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var showCategoryDialog by remember { mutableStateOf(false) }
 
-    val attachments = taskWithAttachments?.attachments ?: emptyList()
+    // Przechowywanie istniejących oraz tymczasowych załączników
+    val existingAttachments = taskWithAttachments?.attachments ?: emptyList()
+    val tempAttachments = remember { mutableStateListOf<Attachment>() }
+
+    // Łączymy wszystkie załączniki do wyświetlenia
+    val allAttachments = if (taskWithAttachments?.task?.id != null) {
+        existingAttachments
+    } else {
+        tempAttachments
+    }
 
     // Launcher dla wybierania mediów (zdjęć)
     val pickMedia = rememberLauncherForActivityResult(
@@ -69,7 +78,11 @@ fun TaskEditScreen(
                     createdAt = System.currentTimeMillis()
                 )
 
-                onAddAttachment(newAttachment)
+                if (taskWithAttachments?.task?.id != null) {
+                    onAddAttachment(newAttachment)
+                } else {
+                    tempAttachments.add(newAttachment)
+                }
             }
         }
     }
@@ -100,7 +113,11 @@ fun TaskEditScreen(
                     createdAt = System.currentTimeMillis()
                 )
 
-                onAddAttachment(newAttachment)
+                if (taskWithAttachments?.task?.id != null) {
+                    onAddAttachment(newAttachment)
+                } else {
+                    tempAttachments.add(newAttachment)
+                }
             }
         }
     }
@@ -130,7 +147,7 @@ fun TaskEditScreen(
                                 description = description,
                                 status = status,
                                 notify = notify,
-                                finishAt = notifyAtDate.time, // Zawsze ustawiaj finishAt, niezależnie od notify
+                                finishAt = notifyAtDate.time,
                                 category = category
                             )
                         } else {
@@ -141,11 +158,11 @@ fun TaskEditScreen(
                                 createdAt = System.currentTimeMillis(),
                                 status = status,
                                 notify = notify,
-                                finishAt = notifyAtDate.time, // Zawsze ustawiaj finishAt, niezależnie od notify
+                                finishAt = notifyAtDate.time,
                                 category = category
                             )
                         }
-                        onSave(updatedTask)
+                        onSave(updatedTask, tempAttachments)
                     }) {
                         Icon(Icons.Default.Save, contentDescription = "Zapisz")
                     }
@@ -273,15 +290,21 @@ fun TaskEditScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             // Lista załączników
-            if (attachments.isNotEmpty()) {
+            if (allAttachments.isNotEmpty()) {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(attachments) { attachment ->
+                    items(allAttachments) { attachment ->
                         AttachmentItem(
                             attachment = attachment,
-                            onRemove = { onRemoveAttachment(attachment) },
+                            onRemove = {
+                                if (taskWithAttachments?.task?.id != null) {
+                                    onRemoveAttachment(attachment)
+                                } else {
+                                    tempAttachments.remove(attachment)
+                                }
+                            },
                             onOpen = { onOpenAttachment(attachment) }
                         )
                     }
