@@ -24,10 +24,6 @@ class SettingsManager(private val context: Context) {
             preferences[NOTIFICATION_ADVANCE_TIME] ?: DEFAULT_ADVANCE_TIME
         }
 
-    fun getNotificationAdvanceTime(): Flow<Long> {
-        return notificationAdvanceTime
-    }
-
     // Zapisywanie czasu wyprzedzenia powiadomień (w milisekundach)
     suspend fun setNotificationAdvanceTime(timeInMillis: Long) {
         context.dataStore.edit { preferences ->
