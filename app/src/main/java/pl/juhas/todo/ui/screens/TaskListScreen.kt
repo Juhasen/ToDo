@@ -32,24 +32,29 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import pl.juhas.todo.database.Category
 import pl.juhas.todo.database.Task
 import pl.juhas.todo.database.TaskStatus
 import pl.juhas.todo.database.TaskWithAttachments
 import pl.juhas.todo.ui.composables.TaskItem
+import pl.juhas.todo.utils.SettingsManager
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -60,33 +65,54 @@ fun TaskListScreen(
     onTaskStatusChange: (Task) -> Unit,
     onSettingsClick: () -> Unit
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val settingsManager = remember { SettingsManager(context) }
+
     // Stan dla wyszukiwarki
     var searchQuery by remember { mutableStateOf("") }
 
     // Stan dla filtra kategorii
     var showCategoryFilter by remember { mutableStateOf(false) }
 
-    // Stan dla opcji ukrywania zakończonych zadań
+    // Pobieranie domyślnych ustawień filtrowania z SettingsManager
     var hideDoneTasks by remember { mutableStateOf(false) }
+    val selectedCategories = remember { mutableStateMapOf<Category, Boolean>() }
 
-    // Stan dla wybranych kategorii (true = wybrana, false = niewybrana)
-    val selectedCategories = remember {
-        mutableStateMapOf<Category, Boolean>().apply {
+    // Załaduj domyślne ustawienia filtrowania
+    LaunchedEffect(Unit) {
+        // Pobierz domyślną wartość dla ukrywania zakończonych zadań
+        hideDoneTasks = settingsManager.hideDoneTasks.first()
+
+        // Pobierz domyślne wartości dla filtrowania kategorii
+        Category.entries.forEach { category ->
+            selectedCategories[category] = settingsManager.getCategorySelected(category).first()
+        }
+    }
+
+    // Zapisz ustawienia filtrowania do SettingsManager przy zmianie
+    fun saveFilterPreferences() {
+        coroutineScope.launch {
+            settingsManager.setHideDoneTasks(hideDoneTasks)
             Category.entries.forEach { category ->
-                this[category] = true
+                settingsManager.setCategorySelected(category, selectedCategories[category] != false)
             }
         }
     }
 
+    // Filtrowanie zadań na podstawie wyszukiwanego tekstu, wybranych kategorii i ukrywania zakończonych zadań
     val filteredTasks = tasks.filter { taskWithAttachments ->
+        // Sprawdź, czy tytuł zawiera wyszukiwany tekst
         val matchesSearch = if (searchQuery.isEmpty()) {
             true
         } else {
             taskWithAttachments.task.title.contains(searchQuery, ignoreCase = true)
         }
 
+        // Sprawdź, czy kategoria zadania jest wśród wybranych kategorii
         val matchesCategory = selectedCategories[taskWithAttachments.task.category] != false
 
+        // Sprawdź, czy zadanie nie jest zakończone lub czy nie ukrywamy zakończonych zadań
         val matchesStatus = !(hideDoneTasks && taskWithAttachments.task.status == TaskStatus.DONE)
 
         // Zadanie musi spełniać wszystkie warunki
@@ -98,16 +124,24 @@ fun TaskListScreen(
             TopAppBar(
                 title = { Text("TODO LIST") },
                 actions = {
-                    IconButton(onClick = { hideDoneTasks = !hideDoneTasks }) {
+                    // Przycisk do włączania/wyłączania ukrywania zakończonych zadań
+                    IconButton(onClick = {
+                        hideDoneTasks = !hideDoneTasks
+                        saveFilterPreferences()
+                    }) {
                         Icon(
                             imageVector = if (hideDoneTasks) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                             contentDescription = if (hideDoneTasks) "Pokaż zakończone zadania" else "Ukryj zakończone zadania",
                             tint = if (hideDoneTasks) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+
+                    // Przycisk do filtrowania kategorii
                     IconButton(onClick = { showCategoryFilter = !showCategoryFilter }) {
                         Icon(Icons.Default.FilterList, contentDescription = "Filtruj kategorie")
                     }
+
+                    // Przycisk ustawień
                     IconButton(onClick = onSettingsClick) {
                         Icon(Icons.Default.Settings, contentDescription = "Ustawienia")
                     }
@@ -176,6 +210,7 @@ fun TaskListScreen(
                                         checked = selectedCategories[category] != false,
                                         onCheckedChange = { isChecked ->
                                             selectedCategories[category] = isChecked
+                                            saveFilterPreferences()
                                         }
                                     )
                                     Text(category.name)
@@ -195,6 +230,7 @@ fun TaskListScreen(
                                     Category.entries.forEach { category ->
                                         selectedCategories[category] = true
                                     }
+                                    saveFilterPreferences()
                                 }
                             ) {
                                 Text("Zaznacz wszystkie")
@@ -207,6 +243,7 @@ fun TaskListScreen(
                                     Category.entries.forEach { category ->
                                         selectedCategories[category] = false
                                     }
+                                    saveFilterPreferences()
                                 }
                             ) {
                                 Text("Odznacz wszystkie")
