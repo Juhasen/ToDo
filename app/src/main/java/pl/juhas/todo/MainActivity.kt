@@ -208,13 +208,20 @@ class MainActivity : ComponentActivity() {
                     composable("taskEdit") {
                         TaskEditScreen(
                             taskWithAttachments = currentTaskWithAttachments,
-                            onSave = { updatedTask ->
+                            onSave = { updatedTask, tempAttachments ->
                                 lifecycleScope.launch {
                                     withContext(Dispatchers.IO) {
                                         val taskId: Int
                                         if (updatedTask.id == 0) {
                                             // Nowe zadanie - najpierw zapisujemy zadanie, aby otrzymać jego ID
                                             taskId = database.taskDao().insertTask(updatedTask.copy(id = 0)).toInt()
+
+                                            // Teraz zapisujemy wszystkie załączniki związane z nowym zadaniem
+                                            tempAttachments.forEach { attachment ->
+                                                // Aktualizujemy ID zadania dla każdego załącznika
+                                                val updatedAttachment = attachment.copy(taskId = taskId)
+                                                database.attachmentDao().insertAttachment(updatedAttachment)
+                                            }
                                         } else {
                                             // Aktualizacja istniejącego zadania
                                             taskId = updatedTask.id
