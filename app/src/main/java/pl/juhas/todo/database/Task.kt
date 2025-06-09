@@ -11,6 +11,6 @@ data class Task(
     val createdAt: Long,
     val status: TaskStatus = TaskStatus.TODO,
     val notify: Boolean = false,
-    val notifyAt: Long? = null,
+    val finishAt: Long,
     val category: Category = Category.NORMAL,
 )

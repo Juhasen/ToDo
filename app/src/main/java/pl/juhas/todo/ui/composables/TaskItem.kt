@@ -84,13 +84,10 @@ fun TaskItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    // Wyświetl czas wykonania, jeśli jest ustawiony
-                    if (task.notifyAt != null) {
-                        Text(
-                            text = "Wykonaj do: ${dateFormat.format(Date(task.notifyAt))}",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
+                    Text(
+                        text = "Wykonaj do: ${dateFormat.format(Date(task.finishAt))}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {

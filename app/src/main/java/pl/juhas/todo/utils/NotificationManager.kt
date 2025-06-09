@@ -40,22 +40,32 @@ class NotificationHelper(private val context: Context) {
     }
 
     fun scheduleNotification(task: Task, advanceTimeMillis: Long) {
-        val notifyAt = task.notifyAt ?: run {
+        // Sprawdzamy czy task ma ustawiony czas zakończenia
+        val finishAt = task.finishAt
+
+        // Sprawdzamy czy powiadomienie jest włączone
+        if (!task.notify) {
+            Log.d("NotificationHelper", "Notifications are disabled for task: ${task.title}")
             return
         }
 
+        // Sprawdzamy uprawnienie do ustawiania alarmów
         if (!alarmManager.canScheduleExactAlarms()) {
-            Toast.makeText(context, "Please enable 'Exact Alarms' permission in settings.", Toast.LENGTH_LONG).show()
+            Log.e("NotificationHelper", "Missing SCHEDULE_EXACT_ALARM permission")
+            Toast.makeText(context, "Proszę włączyć uprawnienie 'Dokładne alarmy' w ustawieniach.", Toast.LENGTH_LONG).show()
             val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             context.startActivity(intent)
             return
         }
 
-        val notificationTime = notifyAt - advanceTimeMillis
+        // Obliczamy czas powiadomienia (czas zakończenia - wyprzedzenie)
+        val notificationTime = finishAt - advanceTimeMillis
         val currentTime = System.currentTimeMillis()
 
+        // Sprawdzamy czy czas powiadomienia nie minął
         if (notificationTime <= currentTime) {
+            Log.d("NotificationHelper", "Notification time has already passed for task: ${task.title}")
             return
         }
 
@@ -77,6 +87,8 @@ class NotificationHelper(private val context: Context) {
             notificationTime,
             pendingIntent
         )
+
+        Log.d("NotificationHelper", "Scheduled notification for task: ${task.title} at ${Date(notificationTime)}")
     }
 
     fun cancelNotification(taskId: Int) {

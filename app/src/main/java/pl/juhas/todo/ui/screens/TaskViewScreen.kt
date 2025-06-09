@@ -1,23 +1,55 @@
 package pl.juhas.todo.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import pl.juhas.todo.database.*
+import kotlinx.coroutines.flow.first
+import pl.juhas.todo.database.Attachment
+import pl.juhas.todo.database.TaskStatus
+import pl.juhas.todo.database.TaskWithAttachments
 import pl.juhas.todo.ui.composables.ViewAttachmentItem
+import pl.juhas.todo.utils.SettingsManager
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,6 +63,16 @@ fun TaskViewScreen(
     val task = taskWithAttachments.task
     val attachments = taskWithAttachments.attachments
     var showMenu by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val settingsManager = remember { SettingsManager(context) }
+
+    // Pobieramy czas wyprzedzenia powiadomień z ustawień
+    var notificationAdvanceTime by remember { mutableStateOf(30L * 60L * 1000L) } // domyślna wartość
+
+    // Pobieramy rzeczywistą wartość z ustawień
+    LaunchedEffect(key1 = Unit) {
+        notificationAdvanceTime = settingsManager.notificationAdvanceTime.first()
+    }
 
     val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
 
@@ -135,33 +177,43 @@ fun TaskViewScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Data wykonania (jeśli ustawiona)
-            if (task.notifyAt != null) {
+            // Data wykonania (zawsze wyświetlana)
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Event,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Data wykonania: ${dateFormat.format(Date(task.notifyAt))}",
+                    text = "Data wykonania: ${dateFormat.format(Date(task.finishAt!!))}",
                     style = MaterialTheme.typography.bodyMedium
                 )
-
-                // Powiadomienie
-                if (task.notify) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.tertiary
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Powiadomienie włączone",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Osobno wyświetlamy informację o powiadomieniu (tylko jeśli task.notify == true)
+            if (task.notify) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.tertiary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Powiadomienie włączone na ${dateFormat.format(Date(task.finishAt - notificationAdvanceTime))}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Opis zadania
             Text(
@@ -202,3 +254,4 @@ fun TaskViewScreen(
         }
     }
 }
+

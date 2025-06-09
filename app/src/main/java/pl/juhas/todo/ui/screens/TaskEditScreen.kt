@@ -39,7 +39,7 @@ fun TaskEditScreen(
     var description by remember { mutableStateOf(taskWithAttachments?.task?.description ?: "") }
     var status by remember { mutableStateOf(taskWithAttachments?.task?.status ?: TaskStatus.TODO) }
     var notify by remember { mutableStateOf(taskWithAttachments?.task?.notify == true) }
-    var notifyAtDate by remember { mutableStateOf(taskWithAttachments?.task?.notifyAt?.let { Date(it) } ?: Date()) }
+    var notifyAtDate by remember { mutableStateOf(taskWithAttachments?.task?.finishAt?.let { Date(it) } ?: Date()) }
     var category by remember { mutableStateOf(taskWithAttachments?.task?.category ?: Category.NORMAL) }
 
     var showDatePicker by remember { mutableStateOf(false) }
@@ -123,7 +123,7 @@ fun TaskEditScreen(
                                 description = description,
                                 status = status,
                                 notify = notify,
-                                notifyAt = if (notify) notifyAtDate.time else null,
+                                finishAt = notifyAtDate.time, // Zawsze ustawiaj finishAt, niezależnie od notify
                                 category = category
                             )
                         } else {
@@ -134,7 +134,7 @@ fun TaskEditScreen(
                                 createdAt = System.currentTimeMillis(),
                                 status = status,
                                 notify = notify,
-                                notifyAt = if (notify) notifyAtDate.time else null,
+                                finishAt = notifyAtDate.time, // Zawsze ustawiaj finishAt, niezależnie od notify
                                 category = category
                             )
                         }
@@ -219,25 +219,23 @@ fun TaskEditScreen(
                 )
             }
 
-            // Data i czas powiadomienia
-            if (notify) {
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-                val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Data wykonania: ${dateFormat.format(notifyAtDate)}",
-                        modifier = Modifier.weight(1f)
-                    )
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.DateRange, contentDescription = "Wybierz datę")
-                    }
-                    IconButton(onClick = { showTimePicker = true }) {
-                        Icon(Icons.Default.Schedule, contentDescription = "Wybierz czas")
-                    }
+            // Data i czas zakończenia - zawsze widoczne, niezależnie od powiadomień
+            val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Data wykonania: ${dateFormat.format(notifyAtDate)}",
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = { showDatePicker = true }) {
+                    Icon(Icons.Default.DateRange, contentDescription = "Wybierz datę")
+                }
+                IconButton(onClick = { showTimePicker = true }) {
+                    Icon(Icons.Default.Schedule, contentDescription = "Wybierz czas")
                 }
             }
 

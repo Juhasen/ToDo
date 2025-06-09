@@ -5,8 +5,8 @@ import androidx.room.*
 @Dao
 interface TaskDao {
     @Query("SELECT * FROM Task ORDER BY " +
-           "CASE WHEN status = 'TODO' AND notifyAt IS NOT NULL THEN 0 ELSE 1 END, " +
-           "CASE WHEN notifyAt IS NOT NULL THEN notifyAt ELSE 9223372036854775807 END, " +
+           "CASE WHEN status = 'TODO' AND finishAt IS NOT NULL THEN 0 ELSE 1 END, " +
+           "CASE WHEN finishAt IS NOT NULL THEN finishAt ELSE 9223372036854775807 END, " +
            "createdAt DESC")
     suspend fun getAllTasks(): List<Task>
 
