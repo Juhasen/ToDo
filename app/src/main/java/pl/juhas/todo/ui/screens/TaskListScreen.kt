@@ -22,6 +22,8 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -30,6 +32,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -44,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import pl.juhas.todo.database.Category
 import pl.juhas.todo.database.Task
+import pl.juhas.todo.database.TaskStatus
 import pl.juhas.todo.database.TaskWithAttachments
 import pl.juhas.todo.ui.composables.TaskItem
 
@@ -61,6 +65,9 @@ fun TaskListScreen(
 
     // Stan dla filtra kategorii
     var showCategoryFilter by remember { mutableStateOf(false) }
+
+    // Stan dla opcji ukrywania zakończonych zadań
+    var hideDoneTasks by remember { mutableStateOf(false) }
 
     // Stan dla wybranych kategorii (true = wybrana, false = niewybrana)
     val selectedCategories = remember {
@@ -80,8 +87,10 @@ fun TaskListScreen(
 
         val matchesCategory = selectedCategories[taskWithAttachments.task.category] != false
 
-        // Zadanie musi spełniać oba warunki
-        matchesSearch && matchesCategory
+        val matchesStatus = !(hideDoneTasks && taskWithAttachments.task.status == TaskStatus.DONE)
+
+        // Zadanie musi spełniać wszystkie warunki
+        matchesSearch && matchesCategory && matchesStatus
     }
 
     Scaffold(
@@ -89,6 +98,13 @@ fun TaskListScreen(
             TopAppBar(
                 title = { Text("TODO LIST") },
                 actions = {
+                    IconButton(onClick = { hideDoneTasks = !hideDoneTasks }) {
+                        Icon(
+                            imageVector = if (hideDoneTasks) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (hideDoneTasks) "Pokaż zakończone zadania" else "Ukryj zakończone zadania",
+                            tint = if (hideDoneTasks) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     IconButton(onClick = { showCategoryFilter = !showCategoryFilter }) {
                         Icon(Icons.Default.FilterList, contentDescription = "Filtruj kategorie")
                     }
@@ -208,7 +224,24 @@ fun TaskListScreen(
                     onStatusChange = { onTaskStatusChange(taskWithAttachments.task) }
                 )
             }
+
+            // Informacja o braku zadań po filtrowaniu
+            if (filteredTasks.isEmpty()) {
+                item {
+                    Text(
+                        text = when {
+                            tasks.isEmpty() -> "Brak zadań. Dodaj nowe zadanie."
+                            hideDoneTasks && tasks.all { it.task.status == TaskStatus.DONE } ->
+                                "Wszystkie zadania są zakończone. Wyłącz filtr, aby je zobaczyć."
+                            else -> "Brak zadań pasujących do ustawionych filtrów."
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                    )
+                }
+            }
         }
     }
 }
-
