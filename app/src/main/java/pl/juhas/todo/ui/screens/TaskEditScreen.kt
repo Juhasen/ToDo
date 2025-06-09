@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.documentfile.provider.DocumentFile
+import android.widget.Toast
 import pl.juhas.todo.database.*
 import pl.juhas.todo.ui.composables.AttachmentItem
 import java.text.SimpleDateFormat
@@ -117,6 +118,12 @@ fun TaskEditScreen(
                 },
                 actions = {
                     IconButton(onClick = {
+                        // Sprawdź czy tytuł nie jest pusty
+                        if (title.isBlank()) {
+                            Toast.makeText(context, "Tytuł zadania nie może być pusty!", Toast.LENGTH_SHORT).show()
+                            return@IconButton
+                        }
+
                         val updatedTask = if (taskWithAttachments?.task != null) {
                             taskWithAttachments.task.copy(
                                 title = title,
