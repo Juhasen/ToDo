@@ -70,5 +70,12 @@ dependencies {
     implementation("androidx.documentfile:documentfile:1.1.0")
 
     implementation("androidx.navigation:navigation-compose:2.9.0")
+
+    // DataStore Preferences
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
+    implementation("androidx.datastore:datastore-preferences-core:1.1.7")
+
+    // Dodatkowe zależności dla obsługi powiadomień
+    implementation("androidx.work:work-runtime-ktx:2.10.1")
 }
 

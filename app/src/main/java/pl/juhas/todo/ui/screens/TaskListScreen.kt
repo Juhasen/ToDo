@@ -1,65 +1,69 @@
 package pl.juhas.todo.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Attachment
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import pl.juhas.todo.database.Category
 import pl.juhas.todo.database.Task
-import pl.juhas.todo.database.TaskStatus
 import pl.juhas.todo.database.TaskWithAttachments
-import pl.juhas.todo.ui.composables.CategoryChip
 import pl.juhas.todo.ui.composables.TaskItem
-import java.text.SimpleDateFormat
-import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskListScreen(
     tasks: List<TaskWithAttachments>,
     onTaskClick: (Task) -> Unit,
     onAddTask: () -> Unit,
-    onTaskStatusChange: (Task) -> Unit
+    onTaskStatusChange: (Task) -> Unit,
+    onSettingsClick: () -> Unit
 ) {
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("TODO LIST") },
+                actions = {
+                    IconButton(onClick = onSettingsClick) {
+                        Icon(Icons.Default.Settings, contentDescription = "Ustawienia")
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddTask) {
                 Icon(Icons.Default.Add, contentDescription = "Dodaj zadanie")
             }
         }
     ) { paddingValues ->
-
-        Column {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "TODO LIST",
-                style = MaterialTheme.typography.headlineLarge,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 0.dp)
-            )
-
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(tasks) { taskWithAttachments ->
-                    TaskItem(
-                        taskWithAttachments = taskWithAttachments,
-                        onClick = { onTaskClick(taskWithAttachments.task) },
-                        onStatusChange = { onTaskStatusChange(taskWithAttachments.task) }
-                    )
-                }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(tasks) { taskWithAttachments ->
+                TaskItem(
+                    taskWithAttachments = taskWithAttachments,
+                    onClick = { onTaskClick(taskWithAttachments.task) },
+                    onStatusChange = { onTaskStatusChange(taskWithAttachments.task) }
+                )
             }
         }
     }
 }
+

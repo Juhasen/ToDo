@@ -1,17 +1,24 @@
 package pl.juhas.todo
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
@@ -19,21 +26,27 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import pl.juhas.todo.database.AppDatabase
 import pl.juhas.todo.database.Task
 import pl.juhas.todo.database.TaskStatus
 import pl.juhas.todo.database.TaskWithAttachments
-import pl.juhas.todo.ui.screens.TaskDetailScreen
+import pl.juhas.todo.ui.screens.SettingsScreen
+import pl.juhas.todo.ui.screens.TaskEditScreen
 import pl.juhas.todo.ui.screens.TaskListScreen
 import pl.juhas.todo.ui.screens.TaskViewScreen
 import pl.juhas.todo.ui.theme.TODOTheme
 import pl.juhas.todo.utils.AttachmentHelper
+import pl.juhas.todo.utils.SettingsManager
+import android.Manifest
+import android.content.pm.PackageManager
 
 class MainActivity : ComponentActivity() {
     private lateinit var database: AppDatabase
     private lateinit var attachmentHelper: AttachmentHelper
+    private lateinit var settingsManager: SettingsManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,6 +62,12 @@ class MainActivity : ComponentActivity() {
         // Inicjalizacja pomocnika załączników
         attachmentHelper = AttachmentHelper(this)
 
+
+        settingsManager = SettingsManager(this)
+
+        // Sprawdzenie i żądanie uprawnień do powiadomień
+        checkNotificationPermission()
+
         setContent {
             TODOTheme {
                 val navController = rememberNavController()
@@ -62,6 +81,18 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(Unit) {
                     loadTasks { tasks ->
                         tasksWithAttachments = tasks
+
+                        // Sprawdź, czy aplikacja została uruchomiona z powiadomienia
+                        val taskIdFromNotification = intent.getIntExtra("TASK_ID", -1)
+                        if (taskIdFromNotification > 0) {
+                            // Znajdź zadanie o podanym identyfikatorze
+                            val task = tasks.find { it.task.id == taskIdFromNotification }
+                            if (task != null) {
+                                // Ustaw wybrane zadanie i przejdź do ekranu podglądu
+                                currentTaskWithAttachments = task
+                                navController.navigate("taskView")
+                            }
+                        }
                     }
                 }
 
@@ -79,7 +110,7 @@ class MainActivity : ComponentActivity() {
                             },
                             onAddTask = {
                                 currentTaskWithAttachments = null
-                                navController.navigate("taskDetail")
+                                navController.navigate("taskEdit")
                             },
                             onTaskStatusChange = { task ->
                                 val newStatus = if (task.status == TaskStatus.TODO) TaskStatus.DONE else TaskStatus.TODO
@@ -95,6 +126,9 @@ class MainActivity : ComponentActivity() {
                                         tasksWithAttachments = tasks
                                     }
                                 }
+                            },
+                            onSettingsClick = {
+                                navController.navigate("settings")
                             }
                         )
                     }
@@ -110,7 +144,7 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onEdit = {
                                     // Przekierowuje do ekranu edycji
-                                    navController.navigate("taskDetail")
+                                    navController.navigate("taskEdit")
 
                                     // Po powrocie z ekranu edycji, odśwież dane zadania
                                     navController.addOnDestinationChangedListener { _, destination, _ ->
@@ -172,24 +206,26 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    composable("taskDetail") {
-                        TaskDetailScreen(
+                    composable("taskEdit") {
+                        TaskEditScreen(
                             taskWithAttachments = currentTaskWithAttachments,
                             onSave = { updatedTask ->
                                 lifecycleScope.launch {
                                     withContext(Dispatchers.IO) {
+                                        val taskId: Int
                                         if (updatedTask.id == 0) {
                                             // Nowe zadanie - najpierw zapisujemy zadanie, aby otrzymać jego ID
-                                            val newTaskId = database.taskDao().insertTask(updatedTask.copy(id = 0)).toInt()
+                                            taskId = database.taskDao().insertTask(updatedTask.copy(id = 0)).toInt()
 
                                             // Następnie zapisujemy wszystkie tymczasowe załączniki z poprawnym taskId
                                             currentTaskWithAttachments?.attachments?.forEach { attachment ->
                                                 database.attachmentDao().insertAttachment(
-                                                    attachment.copy(taskId = newTaskId)
+                                                    attachment.copy(taskId = taskId)
                                                 )
                                             }
                                         } else {
                                             // Aktualizacja istniejącego zadania
+                                            taskId = updatedTask.id
                                             database.taskDao().updateTask(updatedTask)
                                         }
                                     }
@@ -273,9 +309,7 @@ class MainActivity : ComponentActivity() {
                             onOpenAttachment = { attachment ->
                                 try {
                                     val uri = attachment.filePath.toUri()
-                                    if (attachmentHelper.openAttachment(uri, attachment.mimeType)) {
-                                        // Udało się otworzyć załącznik
-                                    } else {
+                                    if (!attachmentHelper.openAttachment(uri, attachment.mimeType)) {
                                         Toast.makeText(
                                             context,
                                             "Brak aplikacji do otwarcia tego typu pliku",
@@ -293,8 +327,23 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
+
+                    // Nowy ekran ustawień
+                    composable("settings") {
+                        SettingsScreen(navController = navController)
+                    }
                 }
             }
+        }
+    }
+
+    private fun checkNotificationPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                101
+            )
         }
     }
 
@@ -307,3 +356,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+

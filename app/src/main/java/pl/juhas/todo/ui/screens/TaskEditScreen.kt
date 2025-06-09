@@ -26,7 +26,7 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskDetailScreen(
+fun TaskEditScreen(
     taskWithAttachments: TaskWithAttachments?,
     onSave: (Task) -> Unit,
     onCancel: () -> Unit,
