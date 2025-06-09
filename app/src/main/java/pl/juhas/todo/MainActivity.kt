@@ -25,7 +25,7 @@ import pl.juhas.todo.database.AppDatabase
 import pl.juhas.todo.database.Task
 import pl.juhas.todo.database.TaskStatus
 import pl.juhas.todo.database.TaskWithAttachments
-import pl.juhas.todo.ui.screens.TaskDetailScreen
+import pl.juhas.todo.ui.screens.TaskEditScreen
 import pl.juhas.todo.ui.screens.TaskListScreen
 import pl.juhas.todo.ui.screens.TaskViewScreen
 import pl.juhas.todo.ui.theme.TODOTheme
@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
                             },
                             onAddTask = {
                                 currentTaskWithAttachments = null
-                                navController.navigate("taskDetail")
+                                navController.navigate("taskEdit")
                             },
                             onTaskStatusChange = { task ->
                                 val newStatus = if (task.status == TaskStatus.TODO) TaskStatus.DONE else TaskStatus.TODO
@@ -110,7 +110,7 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onEdit = {
                                     // Przekierowuje do ekranu edycji
-                                    navController.navigate("taskDetail")
+                                    navController.navigate("taskEdit")
 
                                     // Po powrocie z ekranu edycji, odśwież dane zadania
                                     navController.addOnDestinationChangedListener { _, destination, _ ->
@@ -172,8 +172,8 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    composable("taskDetail") {
-                        TaskDetailScreen(
+                    composable("taskEdit") {
+                        TaskEditScreen(
                             taskWithAttachments = currentTaskWithAttachments,
                             onSave = { updatedTask ->
                                 lifecycleScope.launch {
@@ -273,9 +273,7 @@ class MainActivity : ComponentActivity() {
                             onOpenAttachment = { attachment ->
                                 try {
                                     val uri = attachment.filePath.toUri()
-                                    if (attachmentHelper.openAttachment(uri, attachment.mimeType)) {
-                                        // Udało się otworzyć załącznik
-                                    } else {
+                                    if (!attachmentHelper.openAttachment(uri, attachment.mimeType)) {
                                         Toast.makeText(
                                             context,
                                             "Brak aplikacji do otwarcia tego typu pliku",
