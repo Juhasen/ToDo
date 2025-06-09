@@ -25,7 +25,8 @@ import pl.juhas.todo.utils.SettingsManager
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    viewModel: SettingsViewModel = viewModel()
+    viewModel: SettingsViewModel = viewModel(),
+    onBackPressed: (() -> Unit)? = null // Opcjonalny parametr dla widoku tabletu
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -59,7 +60,11 @@ fun SettingsScreen(
             TopAppBar(
                 title = { Text("Ustawienia") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        // Używamy onBackPressed jeśli jest dostępny (widok tabletu),
+                        // w przeciwnym razie używamy nawigacji (widok telefonu)
+                        onBackPressed?.invoke() ?: navController.popBackStack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Powrót")
                     }
                 },
