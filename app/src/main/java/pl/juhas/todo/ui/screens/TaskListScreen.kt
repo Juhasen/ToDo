@@ -3,20 +3,28 @@ package pl.juhas.todo.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import pl.juhas.todo.database.Task
@@ -32,6 +40,16 @@ fun TaskListScreen(
     onTaskStatusChange: (Task) -> Unit,
     onSettingsClick: () -> Unit
 ) {
+    // Stan dla wyszukiwarki
+    var searchQuery by remember { mutableStateOf("") }
+
+    // Filtrowanie zadań na podstawie wyszukiwanego tekstu
+    val filteredTasks = if (searchQuery.isEmpty()) {
+        tasks
+    } else {
+        tasks.filter { it.task.title.contains(searchQuery, ignoreCase = true) }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -56,7 +74,27 @@ fun TaskListScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(tasks) { taskWithAttachments ->
+            // Element wyszukiwania na górze listy
+            item {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Szukaj zadań...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Szukaj") },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Wyczyść")
+                            }
+                        }
+                    },
+                    singleLine = true
+                )
+            }
+
+            // Wyświetlanie przefiltrowanych zadań
+            items(filteredTasks) { taskWithAttachments ->
                 TaskItem(
                     taskWithAttachments = taskWithAttachments,
                     onClick = { onTaskClick(taskWithAttachments.task) },
