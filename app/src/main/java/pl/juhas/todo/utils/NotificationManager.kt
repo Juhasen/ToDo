@@ -41,12 +41,10 @@ class NotificationHelper(private val context: Context) {
 
     fun scheduleNotification(task: Task, advanceTimeMillis: Long) {
         val notifyAt = task.notifyAt ?: run {
-            Log.e("NotificationHelper", "Task notifyAt is null for task: ${task.title}")
             return
         }
 
         if (!alarmManager.canScheduleExactAlarms()) {
-            Log.e("NotificationHelper", "Missing SCHEDULE_EXACT_ALARM permission")
             Toast.makeText(context, "Please enable 'Exact Alarms' permission in settings.", Toast.LENGTH_LONG).show()
             val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -58,7 +56,6 @@ class NotificationHelper(private val context: Context) {
         val currentTime = System.currentTimeMillis()
 
         if (notificationTime <= currentTime) {
-            Log.d("NotificationHelper", "Notification time has already passed for task: ${task.title}")
             return
         }
 
@@ -80,23 +77,6 @@ class NotificationHelper(private val context: Context) {
             notificationTime,
             pendingIntent
         )
-
-        Log.d("NotificationHelper", "Scheduled notification for task: ${task.title} at ${Date(notificationTime)}")
-    }
-
-    fun scheduleNotificationForTask(task: Task) {
-        if (!task.notify) {
-            Log.d("NotificationHelper", "Notifications are disabled for task: ${task.title}")
-            return
-        }
-
-        val notifyAt = task.notifyAt ?: run {
-            Log.e("NotificationHelper", "Task notifyAt is null for task: ${task.title}")
-            return
-        }
-
-        val advanceTimeMillis = 2 * 60 * 1000L // Example: 2 minutes before the task's notifyAt time
-        scheduleNotification(task, advanceTimeMillis)
     }
 
     fun cancelNotification(taskId: Int) {

@@ -227,7 +227,7 @@ class MainActivity : ComponentActivity() {
                                         }
 
                                         // Planowanie powiadomienia dla zadania
-                                        notificationHelper.scheduleNotificationForTask(updatedTask.copy(id = taskId))
+                                        notificationHelper.scheduleNotification(updatedTask.copy(id = taskId), settingsManager.getNotificationAdvanceTime().first())
                                     }
 
                                     // Odśwież listę zadań
