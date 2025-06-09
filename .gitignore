@@ -31,6 +31,9 @@ bin/
 gen/
 out/
 
+app/IMPORTANT.txt
+
+
 # Gradle files
 .gradle/
 build/
