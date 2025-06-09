@@ -39,6 +39,7 @@ import pl.juhas.todo.ui.screens.TaskListScreen
 import pl.juhas.todo.ui.screens.TaskViewScreen
 import pl.juhas.todo.ui.theme.TODOTheme
 import pl.juhas.todo.utils.AttachmentHelper
+import pl.juhas.todo.utils.NotificationHelper
 import pl.juhas.todo.utils.SettingsManager
 import android.Manifest
 import android.content.pm.PackageManager
@@ -47,6 +48,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var database: AppDatabase
     private lateinit var attachmentHelper: AttachmentHelper
     private lateinit var settingsManager: SettingsManager
+    private lateinit var notificationHelper: NotificationHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,8 +64,10 @@ class MainActivity : ComponentActivity() {
         // Inicjalizacja pomocnika załączników
         attachmentHelper = AttachmentHelper(this)
 
-
         settingsManager = SettingsManager(this)
+
+        // Inicjalizacja pomocnika powiadomień
+        notificationHelper = NotificationHelper(this)
 
         // Sprawdzenie i żądanie uprawnień do powiadomień
         checkNotificationPermission()
@@ -216,18 +220,14 @@ class MainActivity : ComponentActivity() {
                                         if (updatedTask.id == 0) {
                                             // Nowe zadanie - najpierw zapisujemy zadanie, aby otrzymać jego ID
                                             taskId = database.taskDao().insertTask(updatedTask.copy(id = 0)).toInt()
-
-                                            // Następnie zapisujemy wszystkie tymczasowe załączniki z poprawnym taskId
-                                            currentTaskWithAttachments?.attachments?.forEach { attachment ->
-                                                database.attachmentDao().insertAttachment(
-                                                    attachment.copy(taskId = taskId)
-                                                )
-                                            }
                                         } else {
                                             // Aktualizacja istniejącego zadania
                                             taskId = updatedTask.id
                                             database.taskDao().updateTask(updatedTask)
                                         }
+
+                                        // Planowanie powiadomienia dla zadania
+                                        notificationHelper.scheduleNotification(updatedTask.copy(id = taskId), settingsManager.getNotificationAdvanceTime().first())
                                     }
 
                                     // Odśwież listę zadań
