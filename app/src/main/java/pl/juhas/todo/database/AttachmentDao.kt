@@ -29,6 +29,6 @@ interface AttachmentDao {
     suspend fun getTaskWithAttachments(taskId: Int): TaskWithAttachments
 
     @Transaction
-    @Query("SELECT * FROM Task")
+    @Query("SELECT * FROM Task ORDER BY finishAt ASC")
     suspend fun getAllTasksWithAttachments(): List<TaskWithAttachments>
 }
